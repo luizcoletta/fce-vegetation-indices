@@ -8,7 +8,7 @@ function [Result] = VIMain(NIR, RED)
 
    Result = (NIR-RED)./(NIR+RED);
    
-   %colormap(flipud(jet))
+  % colormap(flipud(jet))
 
    %r1 = [0 1];
    %g1 = [0 1];
@@ -21,7 +21,7 @@ function [Result] = VIMain(NIR, RED)
 
    r1 = [1 0];
    g1 = [1 0.5];
-   b1 =  [0.4 0.4];
+   b1 = [0.4 0.4];
    rgb2 = [r1; g1; b1]';
    rgbb= interp1([1 2],rgb2, linspace(1,2,32 ));
 
