@@ -1,7 +1,7 @@
 function [Result] = VIMain2(NIR, RED)
 
-   RED = fliplr(RED);
-   NIR = fliplr(NIR);
+   %RED = fliplr(RED);
+   %NIR = fliplr(NIR);
 
    NIR = double(NIR);
    RED = double(RED);
@@ -32,7 +32,7 @@ function [Result] = VIMain2(NIR, RED)
    
    figure
    imshow(imrotate(flip(Result/5,2),180), []), title('SR');
-   colormap(newSR );
+   colormap(newSR);
    cmap = colormap; % cmap nicely puts colormap into 3 col data
    % colorbar
    caxis([-1 1])

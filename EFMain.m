@@ -5,7 +5,7 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
    %         'nameDataset' is the name of the dataset as output in               
    %         folder 'data'.
    %              
-   % Example: [dataset] = EFMain('dataset1', 16, [1,0,0], true, [0,0,1], 0);
+   % Example: [dataset] = EFMain('dataset1', 16, [1,0,0,0], true, [0,0,1], 0);
    %           
    % Author: Luiz F. S. Coletta (luiz.fersc@gmail.com) - 30/01/18
    % Update: Luiz F. S. Coletta - 30/01/19
@@ -21,8 +21,8 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
        sSubImage = sizeSubImage;
    end
    
-   vDescriptors = [0, ... % CIE-LAB (2 features)
-                   1, ... % BIC
+   vDescriptors = [1, ... % CIE-LAB (2 features)
+                   0, ... % BIC
                    0];    % Haralick6
    if (nargin >= 3)
        vDescriptors = vetDescriptors;
@@ -73,6 +73,23 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
        nameFile = strjoin(allNames(r(i)));
 
        fullImage = imread([inputImagePath, nameFile]);
+       
+       %%%% GABRIEL/VINICIUS
+       
+       % CALCULAR NDVI e SR
+       
+       % 1) para isso abrir com imread os arquivos da pasta MULTI: NIR, RED, REG
+       % correspondentes ao RGB que tem como nome de arquivo
+       nameFile
+       
+       % 2) Invocar uma função (tipo da que vcs já tem - VlMain2, VlMain1)
+       % passando a matriz do NIR, RED, REG pra calcular o NDVI e/ou SR
+       
+       % 3) Retornar aqui a matriz NDVI/SR
+       NDVIImagemCompleta
+       SRImagemCompleta
+       
+       %%%%%%%%%%%%%%%%%%%%%
 
        red = fullImage(:,:,1);   % Red channel
        green = fullImage(:,:,2); % Green channel
@@ -100,7 +117,7 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
           for k = 1:cols/width % iterate getting subimages from current file (columns)
 
               p = [nameFile, '-', int2str(j), 'x', int2str(k)];
-              position = [position; [p, repmat(' ', [1,20-size(p,2)])]];
+              position = [position; [p, repmat(' ', [1,50-size(p,2)])]];
 
               fprintf('Extracting features of %s - [%d x %d]\n', nameFile, j, k);
 
@@ -133,29 +150,53 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
               featureVector = [];
 
               if (vDescriptors(1)) 
-                 % generates 2 features (avg(a*) and avg(b*))
-                 lab_features = EFLAB(subImage);
+                 % generates 3 features (avg(l*) avg(a*) and avg(b*))
+                 lab_features = EFLAB(subImage, [1,1,1]);
+                 lab_features(isnan(lab_features)) = 0;
                  featureVector = lab_features;
               end
 
               if (vDescriptors(2)) 
                  % default quantization = 64 (128 features); 16 (32 features)
                  % reduced because sparse matrices
-                 bic_features = EFBIC(subImage, 16); 
+                 bic_features = EFBIC(subImage, 8); 
                  featureVector = [featureVector, bic_features'];
               end
 
               if (vDescriptors(3)) 
                  % default neighbors = 8 (48 features);
                  img_gray = rgb2gray(subImage);
-                 angle = [[0 1]; [-1 1]; [-1 0]; [-1 -1]; [0 -1]; [1 -1]; [1 0]; [1 1]];
+                 %angle = [[0 1]; [-1 1]; [-1 0]; [-1 -1]; [0 -1]; [1 -1]; [1 0]; [1 1]];
+                 angle = [[0 1]; [-1 0]; [0 -1]; [1 0]];
                  haralick6 = [];
-                 for l = 1:8
+                 for l = 1:size(angle,1)
                      glcms = graycomatrix(img_gray, 'offset', angle(l,:), 'Symmetric', true);
                      HF = EFGLCM(glcms);
-                     haralick6 = [haralick6; [HF.maximumProbability; HF.correlation; HF.contrast; HF.energy; HF.homogeneity; HF.entropy]];
+                     vecHF = [HF.maximumProbability; HF.correlation; HF.contrast; HF.energy; HF.homogeneity; HF.entropy];
+                     vecHF(isnan(vecHF)) = 0;
+                     haralick6 = [haralick6; vecHF];
                  end 
                  featureVector = [featureVector, haralick6'];
+              end
+              
+              
+              %%%%% GABRIEL/VINICUS
+              
+              if (vDescriptors(4))
+                  
+                  %%%% Obter o NDVI Médio para cada subimagem
+                  
+                  %%% acho que funciona usar:
+                  NDVIsubImage = imcrop(NDVIImagemCompleta, [left, top, width, height]);
+                  SRsubImage = imcrop(SRImagemCompleta, [left, top, width, height]);
+                  
+                  NDVIMedio = mean(mean(NDVIsubImage));
+                  SRsubImage = mean(mean(SRsubImage));
+       
+                  
+                  featureVector = [featureVector, NDVIMedio, SRsubImage];
+                  
+                  
               end
 
               if (withGT)
@@ -184,7 +225,9 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
        maxVal = max(dataset);
        norm_data = [];
        for m = 1:size(dataset,2)-withGT
-           norm_data = [norm_data, (dataset(:, m) - minVal(m))/(maxVal(m) - minVal(m))];
+           vecN = (dataset(:, m) - minVal(m))/(maxVal(m) - minVal(m));
+           vecN(isnan(vecN)) = 0;
+           norm_data = [norm_data, vecN];
        end
        if (withGT)
           dataset = [norm_data, dataset(:,size(dataset,2))];

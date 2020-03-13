@@ -1,14 +1,14 @@
 function [Result] = VIMain(NIR, RED)
 
-   RED = fliplr(RED);
-   NIR = fliplr(NIR);
+   %RED = fliplr(RED);
+   %NIR = fliplr(NIR);
 
    NIR = double(NIR);
    RED = double(RED);
 
    Result = (NIR-RED)./(NIR+RED);
    
-  % colormap(flipud(jet))
+   %colormap(flipud(jet))
 
    %r1 = [0 1];
    %g1 = [0 1];
@@ -32,7 +32,7 @@ function [Result] = VIMain(NIR, RED)
    
    figure
    imshow(imrotate(flipdim(Result,2),180), []), title('NDVI');
-   colormap(newNDVI );
+   colormap(newNDVI);
    cmap = colormap; % cmap nicely puts colormap into 3 col data
    % colorbar
    caxis([-1 1])
