@@ -25,27 +25,9 @@ function [Result] = VIMain(NIR, RED)
    rgb2 = [r1; g1; b1]';
    rgbb= interp1([1 2],rgb2, linspace(1,2,32 ));
 
-   newNDVI = [rgbt;rgbb];
-
+   newNDVI = [rgbt;rgbb]; 
    
-   
-   
-   figure
-   imshow(imrotate(flipdim(Result,2),180), []), title('NDVI');
-   colormap(newNDVI);
-   cmap = colormap; % cmap nicely puts colormap into 3 col data
-   % colorbar
-   caxis([-1 1])
-   hc = colorbar('southoutside');
-   set(hc, 'FontSize', 16)
-   
-   axis off; set(gcf,'Color','White')
-   
-   %colorbar;
-   impixelinfo
-   
-   saveas(gcf,'NDVI.png');
-   
+     
    %http://usefulcodes.blogspot.com/2016/05/colormap-for-ndvi.html
    
 end

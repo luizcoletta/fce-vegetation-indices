@@ -1,3 +1,4 @@
+
 startingFolder = 'C:\Program Files\MATLAB';
 if ~exist(startingFolder, 'dir')
   % If that folder doesn't exist, just start in the current folder.
@@ -10,5 +11,6 @@ if baseFileName == 0
   % User clicked the Cancel button.
   return;
 end
-fullFileName = fullfile(folder, baseFileName)
+
+fullFileName = fullfile(folder, baseFileName);
 RED = imread(fullFileName);

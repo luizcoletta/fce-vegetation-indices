@@ -62,6 +62,8 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
    r = 1:size(allNames,2);
 
    position = []; 
+   
+   nameFileOld = [];
 
    for i = 1:size(allNames,2) % iterate files in 'data'
 
@@ -73,22 +75,42 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
        nameFile = strjoin(allNames(r(i)));
 
        fullImage = imread([inputImagePath, nameFile]);
-       
-       %%%% GABRIEL/VINICIUS
-       
-       % CALCULAR NDVI e SR
+
+%o que fizemos basicamente foi manipular nossos arquivos de seleção de imagem e cálculo da media, ressalva que não conseguimos fazer as variáveis referentes à matriz receber os valores
+
+%ignorando esse fato, quando tentamos rodar o código para ver até onde iriamos, ele deu o erro que mencionei no zap. No mais é só isso mesmo, se conseguirmos armazenar e corrigir esse empecilho no código, e a forma de corte der certo, fechamos essa etapa do projeto! 
        
        % 1) para isso abrir com imread os arquivos da pasta MULTI: NIR, RED, REG
-       % correspondentes ao RGB que tem como nome de arquivo
-       nameFile
+       % correspondentes ao RGB que tem como nome de arquivo nameFile 
        
+       if (~strcmp(nameFile,nameFileOld))
+            nFRED = [nameFile(1:strfind(nameFile,'_RGB')),'RED.tif'];
+       
+            nFNIR = [nameFile(1:strfind(nameFile,'_RGB')),'NIR.tif'];
+       
+            fullFNRed = fullfile(inputImagePath, '/MULTI/', nFRED);
+            fullFNNIR = fullfile(inputImagePath, '/MULTI/', nFNIR);
+       
+            RED = imread(fullFNRed);
+            RED = RED(:,:,1);
+       
+            NIR = imread(fullFNNIR);
+            NIR = NIR(:,:,1);
+            
+            matNDVI = EFNDVI(NIR, RED);
+       end
+                           
+  
        % 2) Invocar uma função (tipo da que vcs já tem - VlMain2, VlMain1)
        % passando a matriz do NIR, RED, REG pra calcular o NDVI e/ou SR
        
+       %VIMain2(NIR, RED);    
+   
        % 3) Retornar aqui a matriz NDVI/SR
-       NDVIImagemCompleta
-       SRImagemCompleta
+       %NDVIImagemCompleta
+       %SRImagemCompleta
        
+
        %%%%%%%%%%%%%%%%%%%%%
 
        red = fullImage(:,:,1);   % Red channel
@@ -109,6 +131,8 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
            fullImageGT = imread([inputGroundTruthPath, nameFileGT]);
        end 
 
+       cont = 1;
+       
        for j = 1:rows/width % iterate getting subimages from current file (lines)
 
           left = 0; 
@@ -123,8 +147,10 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
 
               subImage = imcrop(fullImage, [left, top, width, height]); % left, top, width, height]
 
-              %figure, imshow(subImage)
-
+              if (cont == 3653)
+                 figure, imshow(subImage)
+              end 
+              
               if (withGT)
                   subImageGT = imcrop(fullImageGT, [left, top, width, height]);
                   if (max(max(subImageGT))/255 == 1)
@@ -177,24 +203,21 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
                      haralick6 = [haralick6; vecHF];
                  end 
                  featureVector = [featureVector, haralick6'];
-              end
-              
-              
-              %%%%% GABRIEL/VINICUS
-              
+              end             
+                                      
               if (vDescriptors(4))
                   
                   %%%% Obter o NDVI Médio para cada subimagem
                   
                   %%% acho que funciona usar:
-                  NDVIsubImage = imcrop(NDVIImagemCompleta, [left, top, width, height]);
-                  SRsubImage = imcrop(SRImagemCompleta, [left, top, width, height]);
+                  NDVIsubImage = imcrop(matNDVI, [left, top, width, height]);
+                  %SRsubImage = imcrop(SRImagemCompleta, [left, top, width, height]);
                   
                   NDVIMedio = mean(mean(NDVIsubImage));
-                  SRsubImage = mean(mean(SRsubImage));
+                  %SRsubImage = mean(mean(SRsubImage));
        
                   
-                  featureVector = [featureVector, NDVIMedio, SRsubImage];
+                  featureVector = [featureVector, NDVIMedio];
                   
                   
               end
@@ -209,15 +232,19 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
               % *******************************************************************
               % *******************************************************************
               % *******************************************************************
+              
+              cont = cont + 1;
           end 
 
           top = top + height + 1;
           if (j == 1)
               height = height - 1;
           end 
-
+         
        end 
-
+       
+       nameFileOld = nameFile;
+       
    end 
 
    if (normAttrib) 
@@ -251,4 +278,5 @@ function [dataset] = EFMain(nameDataset, sizeSubImage, vetDescriptors, normalize
        dlmwrite([outputPath, nDataset, '-Index.txt'], position, 'delimiter', '');
    end
 end
+
 
